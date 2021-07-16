@@ -31,11 +31,22 @@ public class CheckoutServiceImpl implements CheckoutService{
     private ProductPromotion productPromotion;
 
 
+
     @Override
     public Products addProduct(Products products) {
 
         Products addProducts =new Products();
-        if(products.getCode()!=null){ addProducts.setCode(products.getCode()); }else {
+        if(products.getCode()!=null){
+            List<Products> findproduct = productRepository.findByCode(products.getCode());
+
+            if(findproduct!=null &&findproduct.size()>0){
+                throw new ResourceNotFoundException("Product code  already exist");
+            }else{
+                addProducts.setCode(products.getCode());
+            }
+
+
+        }else {
             throw new ResourceNotFoundException("Product code is required");
         }
 
@@ -132,6 +143,8 @@ public class CheckoutServiceImpl implements CheckoutService{
                     }
                 }
             total+= calculatePromotion(items);
+        }else{
+            throw new ResourceNotFoundException("no product items were added");
         }
 
         checkout.setTotal(total);
@@ -172,10 +185,14 @@ public class CheckoutServiceImpl implements CheckoutService{
                }else{
                    total=total+findproduct.get(0).getPrice() * groupByProductCode.get(c).getQuantity();
                }
+            }else {
+                throw new ResourceNotFoundException("Product code does not exist");
             }
 
             }
 
+        }else {
+            throw new ResourceNotFoundException("checkout product items empty");
         }
         return total;
     }
@@ -196,6 +213,7 @@ public class CheckoutServiceImpl implements CheckoutService{
     public List<Products> getProductById(String code) {
         return this.productRepository.findByCode(code);
     }
+
 
 
 
