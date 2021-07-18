@@ -31,26 +31,23 @@ public class CheckoutServiceImpl implements CheckoutService{
     private ProductPromotion productPromotion;
 
 
-
     @Override
     public Products addProduct(Products products) {
 
         Products addProducts =new Products();
-        if(products.getCode()!=null){
+        if(products.getCode()!=null && !products.getCode().trim().equalsIgnoreCase("")){
             List<Products> findproduct = productRepository.findByCode(products.getCode());
 
             if(findproduct!=null &&findproduct.size()>0){
-                throw new ResourceNotFoundException("Product code  already exist");
+                throw new ResourceNotFoundException("Product code  already exist, product code: "+products.getCode());
             }else{
                 addProducts.setCode(products.getCode());
             }
-
-
         }else {
             throw new ResourceNotFoundException("Product code is required");
         }
 
-         if(products.getName()!=null){addProducts.setName(products.getName()); }else {
+         if(products.getName()!=null && !products.getName().trim().equalsIgnoreCase("") ){addProducts.setName(products.getName()); }else {
              throw new ResourceNotFoundException("Product name is required");
          }
 
@@ -64,13 +61,15 @@ public class CheckoutServiceImpl implements CheckoutService{
     public Promotions addPromotions(NewPromotion promotions){
 
         Promotions addPromotion = new Promotions();
-        if(promotions.getPromotions().getDescription()!=null){addPromotion.setDescription(promotions.getPromotions().getDescription());}else{
+        if(promotions.getPromotions().getDescription()!=null
+                && !promotions.getPromotions().getDescription().trim().equalsIgnoreCase("")){
+            addPromotion.setDescription(promotions.getPromotions().getDescription());}else{
             throw new ResourceNotFoundException("Promotion description is required");
         }
-        if(promotions.getPromotions().getCode()!=null){ addPromotion.setCode(promotions.getPromotions().getCode());}else{
+        if(promotions.getPromotions().getCode()!=null && !promotions.getPromotions().getCode().trim().equalsIgnoreCase("")){ addPromotion.setCode(promotions.getPromotions().getCode());}else{
             throw new ResourceNotFoundException("Promotion code is required");
         }
-        if(promotions.getPromotions().getQuantity()!=0){ addPromotion.setQuantity(promotions.getPromotions().getQuantity());}else{
+        if(promotions.getPromotions().getQuantity()!=0 ){ addPromotion.setQuantity(promotions.getPromotions().getQuantity());}else{
             throw new ResourceNotFoundException("Promotion quantity is required");
         }
         if(promotions.getPromotions().getStart_date()!=null){ addPromotion.setStart_date(promotions.getPromotions().getStart_date());
@@ -81,14 +80,14 @@ public class CheckoutServiceImpl implements CheckoutService{
         }else{
             throw new ResourceNotFoundException("Promotion end date  is required");
         }
-        if(promotions.getPromotions().getDiscount_percentage()!=0 && promotions.getPromotions().getDiscount_amount()!=0){
+        if(promotions.getPromotions().getDiscount_percentage()==0 && promotions.getPromotions().getDiscount_amount()==0){
             throw new ResourceNotFoundException("Promotion  percentage  or discount amount is required");
         }
         if(promotions.getPromotions().getDiscount_percentage()!=0){addPromotion.setDiscount_percentage(promotions.getPromotions().getDiscount_percentage());}
 
         if(promotions.getPromotions().getDiscount_amount()!=0){addPromotion.setDiscount_amount(promotions.getPromotions().getDiscount_amount());}
 
-            if(promotions.getProduct()!=null){
+            if(promotions.getProduct()!=null && promotions.getProduct().size()>0){
 
                     for (int i = 0; i < promotions.getProduct().size(); i++) {
                         List<Products> findproduct = productRepository.findByCode(promotions.getProduct().get(i).getCode());
@@ -104,17 +103,16 @@ public class CheckoutServiceImpl implements CheckoutService{
                                     }else{
                                         addPromotion.promotiontype(findproduct.get(0));
                                     }
-
                                 } else {
                                     throw new ResourceNotFoundException("Promotion discount amount cannot be greater than the product price");
-
                                 }
 
+                        }else {
+                            throw new ResourceNotFoundException("Product code does not exist");
                         }
-
                     }
-
-
+            }else {
+                throw new ResourceNotFoundException("No products added for promotion");
             }
         return promotionRepository.save(addPromotion);
     }
@@ -163,7 +161,7 @@ public class CheckoutServiceImpl implements CheckoutService{
             List<Products> findproduct = productRepository.findByCode(groupByProductCode.get(c).getProduct());
             if(findproduct.size()>0){
                 Date sysDatedate=new Date();
-               if(findproduct.get(0).getPromotions()!=null){
+               if(findproduct.get(0).getPromotions()!=null && findproduct.get(0).getPromotions().size()>0){
                    for (int p = 0; p < findproduct.get(0).getPromotions().size();p++) {
                        if (findproduct.get(0).getPromotions().get(p).getEnd_date().after(sysDatedate)) {
                            if(findproduct.get(0).getPromotions().get(p).getDiscount_percentage()!=0){
@@ -192,7 +190,7 @@ public class CheckoutServiceImpl implements CheckoutService{
             }
 
         }else {
-            throw new ResourceNotFoundException("checkout product items empty");
+            throw new ResourceNotFoundException("no product added");
         }
         return total;
     }
@@ -213,11 +211,6 @@ public class CheckoutServiceImpl implements CheckoutService{
     public List<Products> getProductById(String code) {
         return this.productRepository.findByCode(code);
     }
-
-
-
-
-
 
 
 }
