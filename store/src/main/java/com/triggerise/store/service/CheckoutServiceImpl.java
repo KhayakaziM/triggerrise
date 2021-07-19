@@ -1,3 +1,4 @@
+
 package com.triggerise.store.service;
 
 import com.triggerise.store.domain.Checkout;
@@ -16,24 +17,33 @@ import org.springframework.stereotype.Service;
 import javax.transaction.Transactional;
 import javax.xml.crypto.Data;
 import java.util.*;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 @Transactional
 @Service
 public class CheckoutServiceImpl implements CheckoutService{
 
-    @Autowired
+
     private ProductRepository productRepository;
-    @Autowired
+
     private PromotionRepository promotionRepository;
 
-    @Autowired
     private ProductPromotion productPromotion;
+
+    @Autowired
+    public CheckoutServiceImpl(ProductRepository productRepository, PromotionRepository promotionRepository, ProductPromotion productPromotion) {
+        this.productRepository = productRepository;
+        this.promotionRepository = promotionRepository;
+        this.productPromotion = productPromotion;
+    }
+
+    org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(CheckoutServiceImpl.class);
 
 
     @Override
     public Products addProduct(Products products) {
-
+        logger.info(String.valueOf(products));
         Products addProducts =new Products();
         if(products.getCode()!=null && !products.getCode().trim().equalsIgnoreCase("")){
             List<Products> findproduct = productRepository.findByCode(products.getCode());
@@ -59,7 +69,7 @@ public class CheckoutServiceImpl implements CheckoutService{
 
     @Override
     public Promotions addPromotions(NewPromotion promotions){
-
+        logger.info(String.valueOf(promotions));
         Promotions addPromotion = new Promotions();
         if(promotions.getPromotions().getDescription()!=null
                 && !promotions.getPromotions().getDescription().trim().equalsIgnoreCase("")){
@@ -119,6 +129,8 @@ public class CheckoutServiceImpl implements CheckoutService{
 
     @Override
     public Checkout checkoutItems(Checkout checkout){
+
+        logger.info(String.valueOf(checkout));
         Checkout addItems=new Checkout ();
 
         ArrayList<Items> items = new ArrayList<Items>();
@@ -152,6 +164,8 @@ public class CheckoutServiceImpl implements CheckoutService{
 
 
     public double calculatePromotion(List<Items> groupByProductCode){
+
+        logger.info(String.valueOf(groupByProductCode));
         Double total = 0.0;
         final int hundredPercent =100;
         int calculateProductTotAmount=0;
@@ -171,11 +185,17 @@ public class CheckoutServiceImpl implements CheckoutService{
                                 calculateProductTotAmount+=productTotalCost*calcPercent;
                                double productAmount=productTotalCost-calculateProductTotAmount;
                                total = total + productAmount;
+                               }else{
+                                   total = total +findproduct.get(0).getPrice() * groupByProductCode.get(c).getQuantity();
                                }
                            }else if (findproduct.get(0).getPromotions().get(p).getDiscount_amount()!=0.0){
                                if(groupByProductCode.get(c).getQuantity()>=findproduct.get(0).getPromotions().get(p).getQuantity()){
+                                   int itemstoSubtract=groupByProductCode.get(c).getQuantity()/findproduct.get(0).getPromotions().get(p).getQuantity();
+                                   int totaldiscount= (int) (findproduct.get(0).getPrice()*itemstoSubtract);
                                    productTotalCost= (int) (findproduct.get(0).getPrice() * groupByProductCode.get(c).getQuantity());
-                                   total = total + productTotalCost- findproduct.get(0).getPromotions().get(p).getDiscount_amount();
+                                   total = total + productTotalCost- totaldiscount;
+                               }else{
+                                   total = total +findproduct.get(0).getPrice() * groupByProductCode.get(c).getQuantity();
                                }
                            }
                        }
@@ -211,6 +231,5 @@ public class CheckoutServiceImpl implements CheckoutService{
     public List<Products> getProductById(String code) {
         return this.productRepository.findByCode(code);
     }
-
 
 }
